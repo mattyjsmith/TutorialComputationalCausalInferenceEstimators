@@ -8,7 +8,7 @@
 # Assistant Professor of Epidemiology and Biostatistics
 
 # Matthew Smith, PhD
-# Research Fellow
+# Research Fellow in Statistics
 
 # Inequalities in Cancer Outcomes Network, LSHTM, London, UK
 
