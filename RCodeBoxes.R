@@ -38,10 +38,12 @@
 
   ### Box 1: Setting the data
   setwd("your path")
-  #setwd("~/Dropbox/ESTIMATORSCIproject/R_Stata_master_files/Data")
   library(haven)
-  #data <- read_dta("~/Dropbox/ESTIMATORSCIproject/R_Stata_master_files/Data/rhc.dta")
-  data <- read_dta("rhc.dta")
+
+  # Load the data
+  data <- read.csv("rhc.csv", header=TRUE)
+    # Data can be accessed at: https://hbiostat.org/data/
+  
   # Define the outcome (Y), exposure (A), confounder (C), and confounders (W)
   data$Y  <- data$dth30; data$Y[] <- +(data$Y=="Yes"); data$Y <- as.numeric(data$Y); Y <- data$Y 
   data$A  <- data$swang1; data$A[] <- +(data$A=="RHC"); data$A <- as.numeric(data$A); A <- data$A
@@ -104,8 +106,7 @@
     reg <- glm(Y ~ -1 + (A1 + A0) + A1:(C1) + A0:(C1), data=data); summary(reg)
     Y1 <- margins(reg, variables="A1"); Y1
     Y0 <- margins(reg, variables="A0"); Y0
-    ATE <- Y1$fitted[A==1]-Y0$fitted[A==0]; 
-    mean(ATE)
+    ATE <- summary(Y1)$AME-summary(Y0)$AME; ATE
     rm(ATE)
     
   ## 3.2 Parametric G-formula
