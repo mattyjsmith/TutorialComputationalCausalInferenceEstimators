@@ -25,28 +25,40 @@ The rhc dataset can be dowloaded at http://biostat.mc.vanderbilt.edu/wiki/Main/D
 			set more off
 			*cd "C:\Data" 					// this path should point to where the RHC data are
 			use "rhc.dta", clear
-			describe
-			count
-			* 83 variables and 5,735 observations
+			encode swang1, g(rhc)   			//  Generate  the  treatment  variable  'rhc'
+			recode  rhc (1=0) (2=1)   			//  Recode  the  treatment  variable  'rhc'
+			lab  def  rhc 0 "No RHC" 1 "RHC", modify   	//  Define  labels  for  the  rhc  variable
+			lab  val  rhc rhc				//  Assign  the  label to the  rhc  variable
+			replace  dthdte="." if  dthdte =="NA"
+			destring  dthdte , g(deathdate)			//  Convert  the  outcome  variable  to  numeric
+			gen  death_d30 = 1 if (deathdate -sadmdte)<=30	//  Create  the  outcome  of death  within  30 days
+			replace  death_d30=0 if  death_d30 ==.		//  Recode  those  who did not die  within  30 days
+			rename  sex  sex2
+			encode  sex2 , g(sex)				//  Convert  ’sex ’ to a numeric  variable
+			rename  race  race2
+			encode  race2 , g(race)				//  Convert  ’race ’ to a numeric  variable
+			rename  ca ca2
+			encode ca2 , g(ca)				//  Convert  ’cancer ’ to a numeric  variable
+
 			
 /* Box 1: Setting the data */
 			* Define the outcome (Y), exposure (A), confounder (C), and confounders (W)
-			global Y death_d30 
-			global A rhc 
-			global C sex 
-			global W sex age edu race carcinoma 
+			global Y death_d30				//  Outcome: 30-day  mortality
+			global A rhc					//  Treatment: Right  Heart  Catheterisation
+			global C i.sex					// One  unique  confounder  of the  set of W
+			global W i.sex c.age c.edu i.race i.ca		// A set of five  confounders
+			count
+			* 83 variables and 5,735 observations
 	
 /* Box 2: Naive estimate of the ATE */
 			* Naive approach to estimate the causal effect
-			regr $Y $A $C 	
-			* The naive estimate of the causal effect is 0.07352
+			regr $Y $A $C 					* The naive estimate of the causal effect is 0.07352
 			* Boostrap 95% CI
 			qui bootstrap, reps(1000) seed(1):	regr $Y $A $C 	
 
 /* 3. G-formula */
 /* 3.1 Non-parametric G-formula */
-       
-	   * 1) ATE    
+        
 /* Box 3: Non-parametric G-Formula for the ATE */
             proportion $C
             matrix m=e(b)
@@ -147,7 +159,7 @@ The rhc dataset can be dowloaded at http://biostat.mc.vanderbilt.edu/wiki/Main/D
 			lincom _b[y1hat] - _b[y0hat]  
 	
 /* Box 8: Parametric regression adjustment using Stata's teffects (one confounder) */
-			teffects ra ($Y $C) ($A) // Parametric g-formula implemented in Stata
+			teffects ra ($Y $C) ($A) 	// Parametric g-formula implemented in Stata
 
 /* Box 9: Bootstrap for the parametric regression adjustment */
 			capture program drop ATE
@@ -186,7 +198,7 @@ The rhc dataset can be dowloaded at http://biostat.mc.vanderbilt.edu/wiki/Main/D
 			teffects ra ($Y $W) ($A)
 
 /* Box 12: Parametric multivariate regression adjustment using Stata’s margins command */
-			regress $Y ibn.$A ibn.$A#c.($W) , noconstant vce(robust)
+			regress $Y ibn.$A ibn.$A#($W) , noconstant vce(robust)
 			margins $A, vce(unconditional)
 			margins r.$A, contrast(nowald)
 		
@@ -525,19 +537,19 @@ The rhc dataset can be dowloaded at http://biostat.mc.vanderbilt.edu/wiki/Main/D
 				
 		//	ATE estimation
 			* Regression adjustment
-			teffects ra (Y w1 w2 w3 w4) (A)
+			teffects ra (Y i.w1 i.w2 i.w3 i.w4) (A)
 			estimates store ra
 				
 			* IPTW
-			teffects ipw (Y) (A w1 w2 w3 w4)
+			teffects ipw (Y) (A i.w1 i.w2 i.w3 i.w4)
 			estimates store ipw
 				
 			* IPTW-RA
-			teffects ipwra (Y w1 w2 w3 w4) (A w1 w2 w3 w4)
+			teffects ipwra (Y i.w1 i.w2 i.w3 i.w4) (A i.w1 i.w2 i.w3 i.w4)
 			estimates store ipwra	
 				
 			* AIPTW
-			teffects aipw (Y w1 w2 w3 w4) (A w1 w2 w3 w4)
+			teffects aipw (Y i.w1 i.w2 i.w3 i.w4) (A i.w1 i.w2 i.w3 i.w4)
 			estimates store aipw
 				
 			* Results
