@@ -172,7 +172,7 @@
     reg1 <- glm(Y ~ -1 + (A1 + A0) + A1:(C1 + w1 + w2 + factor(w3) + factor(w4)) + A0:(C0 + w1 + w2 + factor(w3) + factor(w4)) , data=data); summary(reg1)
     poY1m <- margins(reg1, variables="A1"); poY1m
     poY0m <- margins(reg1, variables="A0"); poY0m
-    ATE2 <- poY1m$fitted[A==1] - poY0m$fitted[A==0]; mean(ATE2)
+    ATE2 <- summary(poY1m)$AME-summary(poY0m)$AME
     
     ### Box 13 Bootstrap for the multivariate parametric regression adjustment
     library(boot)           # Install the Bootstrap package
